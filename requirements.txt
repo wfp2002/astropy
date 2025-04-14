@@ -1,0 +1,6 @@
+streamlit
+skyfield
+sgp4
+pandas
+matplotlib
+
