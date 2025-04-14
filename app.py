@@ -66,10 +66,12 @@ def plotar_trajetoria(df, planeta):
 
     # Gráfico de Elevação
     ax1.plot(df['Tempo (UTC)'], df['Elevação'], label='Elevação', color='orange')
-    ax1.set_title(f"🛰️ Trajetória de {planeta.capitalize()} (próximas 12 horas) - Elevação")
+    ax1.set_title(f"Trajetória de {planeta.capitalize()} (próximas 12 horas) - Elevação")
     ax1.set_xlabel("Horário (UTC)")
     ax1.set_ylabel("Elevação (°)")
     ax1.grid(True)
+
+    print("")
 
     # Gráfico de Azimute
     ax2.plot(df['Tempo (UTC)'], df['Azimute'], label='Azimute', color='blue')
