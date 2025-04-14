@@ -79,7 +79,8 @@ def plotar_trajetoria(df, planeta):
     ax2.set_xlabel("Horário (UTC)")
     ax2.set_ylabel("Azimute (°)")
     ax2.grid(True)
-
+    
+    plt.subplots_adjust(hspace=1.5)
     plt.xticks(rotation=45)
     st.pyplot(fig)
 
