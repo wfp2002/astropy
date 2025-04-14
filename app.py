@@ -87,7 +87,7 @@ def plotar_trajetoria(df, planeta):
 # --- Streamlit App ---
 st.set_page_config(page_title="Rastreamento de Planetas", layout="centered")
 
-st.title("🔭 Rastreador de Planetas em Tempo Real")
+st.title("🔭 Planetas em Tempo Real")
 
 # Menu de planetas
 planetas_disponiveis = [
