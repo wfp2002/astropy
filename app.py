@@ -61,7 +61,9 @@ def gerar_trajetoria(planet_name, latitude, longitude):
     
     return pd.DataFrame(dados)
 
-def plotar_trajetoria(df, planeta):
+
+
+def plotar_trajetoria(df, planeta, az_atual=None, el_atual=None, tempo_atual=None):
     fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 8))
 
     # Gráfico de Elevação
@@ -71,18 +73,22 @@ def plotar_trajetoria(df, planeta):
     ax1.set_ylabel("Elevação (°)")
     ax1.grid(True)
 
-    print("")
-
     # Gráfico de Azimute
     ax2.plot(df['Tempo (UTC)'], df['Azimute'], label='Azimute', color='blue')
     ax2.set_title(f"Trajetória de {planeta.capitalize()} (próximas 12 horas) - Azimute")
     ax2.set_xlabel("Horário (UTC)")
-    ax2.set_ylabel("Azimute (°)")
+    ax2.set_ylabel("Azimute (°)")  
     ax2.grid(True)
-    
+
+    # 👉 Adiciona marcador do ponto atual, se fornecido
+    if tempo_atual and az_atual is not None and el_atual is not None:
+        ax1.plot(tempo_atual, el_atual, 'ro', label='Atual')  # bolinha vermelha na elevação
+        ax2.plot(tempo_atual, az_atual, 'ro', label='Atual')  # bolinha vermelha no azimute
+
     plt.subplots_adjust(hspace=0.5)
     plt.xticks(rotation=45)
     st.pyplot(fig)
+
 
 # --- Streamlit App ---
 st.set_page_config(page_title="Rastreamento de Planetas", layout="centered")
