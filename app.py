@@ -1,9 +1,13 @@
 import streamlit as st
 from skyfield.api import load, Topos, utc
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import time
 import matplotlib.pyplot as plt
 import pandas as pd
+import matplotlib.dates as mdates
+
+# Configuração da página
+st.set_page_config(page_title="Rastreamento de Planetas", layout="centered")
 
 # Carrega efemérides só uma vez
 @st.cache_resource
@@ -34,12 +38,9 @@ def calcular_posicao(planet_name, latitude, longitude, tempo):
         'neptune': 8,
         'pluto': 9
     }
-    
-    # Verifica se o nome do planeta é válido
     earth = planets['earth']
     observer = earth + Topos(latitude_degrees=latitude, longitude_degrees=longitude)
-    
-    # Verifica se o planeta está na lista de planetas válidos
+
     if planet_name.lower() in planetas_dict:
         planet = planets[planetas_dict[planet_name.lower()]]
     else:
@@ -47,52 +48,56 @@ def calcular_posicao(planet_name, latitude, longitude, tempo):
 
     astrometric = observer.at(tempo).observe(planet)
     alt, az, _ = astrometric.apparent().altaz()
-    return az.degrees, alt.degrees, tempo.utc_iso()
+    return az.degrees, alt.degrees, tempo.utc_iso(), tempo.utc_datetime()
 
 def gerar_trajetoria(planet_name, latitude, longitude):
     ts = load.timescale()
-    now = datetime.utcnow().replace(tzinfo=utc)  # Corrigido: adiciona timezone UTC
-    times = [ts.utc(now + timedelta(minutes=i)) for i in range(0, 60 * 12 + 1, 10)]  # 12h, de 10 em 10 min
+    # Usando datetime.now com timezone.utc para obter o tempo UTC
+    now = datetime.now(timezone.utc)  # Corrigido: usando timezone aware
+    times = [ts.utc(now + timedelta(minutes=i)) for i in range(-60 * 6, 60 * 6 + 1, 10)]  # 6h antes e 6h depois
     dados = []
 
     for t in times:
-        az, el, _ = calcular_posicao(planet_name, latitude, longitude, t)
+        az, el, _, _ = calcular_posicao(planet_name, latitude, longitude, t)
         dados.append({'Tempo (UTC)': t.utc_datetime(), 'Azimute': az, 'Elevação': el})
     
     return pd.DataFrame(dados)
-
-
 
 def plotar_trajetoria(df, planeta, az_atual=None, el_atual=None, tempo_atual=None):
     fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 8))
 
     # Gráfico de Elevação
     ax1.plot(df['Tempo (UTC)'], df['Elevação'], label='Elevação', color='orange')
-    ax1.set_title(f"Trajetória de {planeta.capitalize()} (próximas 12 horas) - Elevação")
+    if tempo_atual and el_atual is not None:
+        ax1.plot(tempo_atual, el_atual, 'ro', label='Atual')
+    ax1.set_title(f"Trajetória de {planeta.capitalize()} (6h antes e 6h depois) - Elevação")
     ax1.set_xlabel("Horário (UTC)")
     ax1.set_ylabel("Elevação (°)")
     ax1.grid(True)
 
+    # Formatar os timestamps no eixo X como HH:MM
+    ax1.xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))
+
     # Gráfico de Azimute
     ax2.plot(df['Tempo (UTC)'], df['Azimute'], label='Azimute', color='blue')
-    ax2.set_title(f"Trajetória de {planeta.capitalize()} (próximas 12 horas) - Azimute")
+    if tempo_atual and az_atual is not None:
+        ax2.plot(tempo_atual, az_atual, 'ro', label='Atual')
+    ax2.set_title(f"Trajetória de {planeta.capitalize()} (6h antes e 6h depois) - Azimute")
     ax2.set_xlabel("Horário (UTC)")
-    ax2.set_ylabel("Azimute (°)")  
+    ax2.set_ylabel("Azimute (°)")
     ax2.grid(True)
 
-    # 👉 Adiciona marcador do ponto atual, se fornecido
-    if tempo_atual and az_atual is not None and el_atual is not None:
-        ax1.plot(tempo_atual, el_atual, 'ro', label='Atual')  # bolinha vermelha na elevação
-        ax2.plot(tempo_atual, az_atual, 'ro', label='Atual')  # bolinha vermelha no azimute
+    # Formatar os timestamps no eixo X como HH:MM
+    ax2.xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))
 
     plt.subplots_adjust(hspace=0.5)
     plt.xticks(rotation=45)
     st.pyplot(fig)
 
+    # Fechar a figura para liberar memória
+    plt.close(fig)  # Fechar a figura após exibir para evitar consumo excessivo de memória
 
 # --- Streamlit App ---
-st.set_page_config(page_title="Rastreamento de Planetas", layout="centered")
-
 st.title("🔭 Planetas em Tempo Real")
 
 # Menu de planetas
@@ -110,29 +115,33 @@ with col1:
 with col2:
     longitude = st.number_input("Longitude", value=-46.6333, format="%.6f")
 
-# Botão para iniciar rastreamento + mostrar gráfico
-if st.button("🚀 Iniciar Rastreamento + Ver Trajetória"):
+# Botão para iniciar rastreamento com atualização contínua
+if st.button("🚀 Iniciar Rastreamento em Tempo Real"):
     ts = load.timescale()
     placeholder = st.empty()
-    chart_placeholder = st.container()
+    chart_placeholder = st.empty()
 
-    # Gerar e exibir gráfico da trajetória
     df = gerar_trajetoria(planeta.lower(), latitude, longitude)
-    plotar_trajetoria(df, planeta)
 
-    st.success(f"Rastreando {planeta.capitalize()} em tempo real...")
-
+    # Aqui utilizamos um loop com sleep pequeno, porém sem sobrecarregar a renderização
     while True:
         tempo = ts.now()
-        az, el, timestamp = calcular_posicao(planeta.lower(), latitude, longitude, tempo)
+        az, el, timestamp, dt_obj = calcular_posicao(planeta.lower(), latitude, longitude, tempo)
         az_dms = graus_para_dms(az)
         el_dms = graus_para_dms(el)
 
-        placeholder.markdown(f"""
-        ### 🪐 {planeta.capitalize()} (Atual)
-        **Timestamp (UTC):** `{timestamp}`  
-        **Azimute:** {az:.2f}° ({az_dms})  
-        **Elevação:** {el:.2f}° ({el_dms})
-        """)
-        time.sleep(0.1)
+        # Atualiza os gráficos com a posição atual
+        with chart_placeholder:
+            plotar_trajetoria(df, planeta, az, el, dt_obj)
+
+        # Atualiza os dados textuais
+        with placeholder:
+            st.markdown(f"""
+            ### 🪐 {planeta.capitalize()} (Atual)
+            **Timestamp (UTC):** `{timestamp}`  
+            **Azimute:** {az:.2f}° ({az_dms})  
+            **Elevação:** {el:.2f}° ({el_dms})
+            """)
+
+        #time.sleep(0.5)  # Atualiza a cada 0.1 segundo (você pode ajustar o valor)
 
