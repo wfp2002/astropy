@@ -145,6 +145,7 @@ if st.button("🚀 Iniciar Rastreamento em Tempo Real"):
         el_dms = graus_para_dms(el)
         visibilidade = calcular_visibilidade(planeta.lower(), latitude, longitude, tempo)
 
+        #Atualiza todos os graficos e nao so a bolinha a cada 60 updates da bolinha para ela nao ficar fora do grafico.
         if contador >= 60:
             df = gerar_trajetoria(planeta.lower(), latitude, longitude)
             contador = 0
@@ -162,7 +163,7 @@ if st.button("🚀 Iniciar Rastreamento em Tempo Real"):
             **Timestamp (UTC):** `{timestamp}`  
             **Azimute:** {az:.2f}° ({az_dms})  
             **Elevação:** {el:.2f}° ({el_dms})  
-            **Visibilidade:** {visibilidade}
+            **Visibilidade:** {visibilidade}  
             """)
 
         contador += 1
