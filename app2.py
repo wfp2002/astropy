@@ -5,7 +5,6 @@ import time
 import matplotlib.pyplot as plt
 import pandas as pd
 import matplotlib.dates as mdates
-import numpy as np
 
 # Configuração da página
 st.set_page_config(page_title="Rastreamento de Planetas", layout="centered")
@@ -53,6 +52,7 @@ def calcular_posicao(planet_name, latitude, longitude, tempo):
 
 def gerar_trajetoria(planet_name, latitude, longitude):
     ts = load.timescale()
+    # Usando datetime.now com timezone.utc para obter o tempo UTC
     now = datetime.now(timezone.utc)  # Corrigido: usando timezone aware
     times = [ts.utc(now + timedelta(minutes=i)) for i in range(-60 * 6, 60 * 6 + 1, 10)]  # 6h antes e 6h depois
     dados = []
@@ -95,37 +95,7 @@ def plotar_trajetoria(df, planeta, az_atual=None, el_atual=None, tempo_atual=Non
     st.pyplot(fig)
 
     # Fechar a figura para liberar memória
-    plt.close(fig)
-
-# Novo gráfico polar de Azimute (bússola)
-def plotar_azimute_polar(az_atual):
-    fig, ax = plt.subplots(figsize=(8, 8), subplot_kw={'projection': 'polar'})
-
-    # Convertendo azimute para radianos
-    az_rad = np.radians(az_atual)
-
-    # Desenhando a bússola
-    ax.plot(az_rad, 1, 'ro')  # Posição atual do planeta (na bússola)
-
-    # Ajustar a rotação para colocar o Norte (0°) na parte de cima
-    ax.set_theta_offset(np.pi / 2)  # Rotacionar 90 graus no sentido anti-horário
-    ax.set_theta_direction(-1)  # Inverter a direção dos ângulos para que Leste e Oeste sejam trocados
-
-    ax.set_ylim(0, 1.5)  # Ajustando o limite radial
-    ax.set_yticklabels([])  # Remover os rótulos do eixo radial
-
-    # Adicionando marcas cardeais (Norte, Sul, Leste, Oeste)
-    ax.set_xticks(np.radians([0, 90, 180, 270]))  # 0°, 90°, 180°, 270° (Norte, Leste, Sul, Oeste)
-    ax.set_xticklabels(['Norte', 'Leste', 'Sul', 'Oeste'])  # Marca a direção como Norte, Leste, Sul, Oeste
-
-    # Configurando título e estilo do gráfico
-    ax.set_title(f"Azimute de {planeta.capitalize()} (Ponto de vista da localização)", fontsize=15)
-    ax.grid(True)
-
-    # Fechar a figura para liberar memória
-    plt.close(fig)
-
-    return fig
+    plt.close(fig)  # Fechar a figura após exibir para evitar consumo excessivo de memória
 
 # --- Streamlit App ---
 st.title("🔭 Planetas em Tempo Real")
@@ -141,19 +111,19 @@ planeta = st.selectbox("🌌 Escolha um planeta:", [p.capitalize() for p in plan
 st.markdown("### 🌍 Sua localização:")
 col1, col2 = st.columns(2)
 with col1:
-    latitude = st.number_input("Latitude", value=-22.67, format="%.6f")
+    latitude = st.number_input("Latitude", value=-23.5505, format="%.6f")
 with col2:
-    longitude = st.number_input("Longitude", value=-46.97, format="%.6f")
+    longitude = st.number_input("Longitude", value=-46.6333, format="%.6f")
 
 # Botão para iniciar rastreamento com atualização contínua
 if st.button("🚀 Iniciar Rastreamento em Tempo Real"):
     ts = load.timescale()
     placeholder = st.empty()
     chart_placeholder = st.empty()
-    compass_placeholder = st.empty()  # Placeholder para o gráfico polar de azimute
 
     df = gerar_trajetoria(planeta.lower(), latitude, longitude)
 
+    # Aqui utilizamos um loop com sleep pequeno, porém sem sobrecarregar a renderização
     while True:
         tempo = ts.now()
         az, el, timestamp, dt_obj = calcular_posicao(planeta.lower(), latitude, longitude, tempo)
@@ -163,11 +133,6 @@ if st.button("🚀 Iniciar Rastreamento em Tempo Real"):
         # Atualiza os gráficos com a posição atual
         with chart_placeholder:
             plotar_trajetoria(df, planeta, az, el, dt_obj)
-        
-        # Atualiza o gráfico polar (bússola) com a direção do azimute
-        with compass_placeholder:
-            compass_fig = plotar_azimute_polar(az)
-            st.pyplot(compass_fig)
 
         # Atualiza os dados textuais
         with placeholder:
@@ -178,5 +143,5 @@ if st.button("🚀 Iniciar Rastreamento em Tempo Real"):
             **Elevação:** {el:.2f}° ({el_dms})
             """)
 
-        time.sleep(0.1)  # Atualiza a cada 0.1 segundo
+        time.sleep(0.1)  # Atualiza a cada 0.1 segundo (você pode ajustar o valor)
 
