@@ -45,7 +45,7 @@ def calcular_posicao(planet_name, latitude, longitude, tempo):
 def gerar_trajetoria(planet_name, latitude, longitude):
     ts = load.timescale()
     now = datetime.now(timezone.utc)
-    times = [ts.utc(now + timedelta(minutes=i)) for i in range(-360, 361, 10)]  # -6h a +6h
+    times = [ts.utc(now + timedelta(minutes=i)) for i in range(-60 * 6, 60 * 6 + 1, 10)]  # 6h antes e 6h depois
     dados = []
 
     for t in times:
@@ -57,23 +57,25 @@ def gerar_trajetoria(planet_name, latitude, longitude):
 def plotar_trajetoria(df, planeta, az_atual=None, el_atual=None, tempo_atual=None):
     fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 8))
 
-    # Gráfico de Elevação
-    ax1.plot(df['Tempo (UTC)'], df['Elevação'], color='orange', label='Elevação')
+    # Elevação
+    ax1.plot(df['Tempo (UTC)'], df['Elevação'], label='Elevação', color='orange')
     if tempo_atual and el_atual is not None:
-        ax1.plot(tempo_atual, el_atual, 'ro', label='Atual')
-        ax1.annotate(f"{el_atual:.2f}°", (tempo_atual, el_atual), textcoords="offset points", xytext=(0,10), ha='center')
-    ax1.set_title(f"Trajetória de {planeta.capitalize()} (±6h) - Elevação")
+        ax1.plot(tempo_atual, el_atual, 'ro')
+        ax1.annotate(f"{el_atual:.1f}°", (tempo_atual, el_atual),
+                     textcoords="offset points", xytext=(0, 10), ha='center', color='red')
+    ax1.set_title(f"Trajetória de {planeta.capitalize()} (6h antes e 6h depois) - Elevação")
     ax1.set_xlabel("Horário (UTC)")
     ax1.set_ylabel("Elevação (°)")
     ax1.grid(True)
     ax1.xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))
 
-    # Gráfico de Azimute
-    ax2.plot(df['Tempo (UTC)'], df['Azimute'], color='blue', label='Azimute')
+    # Azimute
+    ax2.plot(df['Tempo (UTC)'], df['Azimute'], label='Azimute', color='blue')
     if tempo_atual and az_atual is not None:
-        ax2.plot(tempo_atual, az_atual, 'ro', label='Atual')
-        ax2.annotate(f"{az_atual:.2f}°", (tempo_atual, az_atual), textcoords="offset points", xytext=(0,10), ha='center')
-    ax2.set_title(f"Trajetória de {planeta.capitalize()} (±6h) - Azimute")
+        ax2.plot(tempo_atual, az_atual, 'ro')
+        ax2.annotate(f"{az_atual:.1f}°", (tempo_atual, az_atual),
+                     textcoords="offset points", xytext=(0, 10), ha='center', color='red')
+    ax2.set_title(f"Trajetória de {planeta.capitalize()} (6h antes e 6h depois) - Azimute")
     ax2.set_xlabel("Horário (UTC)")
     ax2.set_ylabel("Azimute (°)")
     ax2.grid(True)
@@ -85,11 +87,11 @@ def plotar_trajetoria(df, planeta, az_atual=None, el_atual=None, tempo_atual=Non
     plt.close(fig)
 
 def plotar_azimute_polar(az_atual):
-    fig, ax = plt.subplots(figsize=(6, 6), subplot_kw={'projection': 'polar'})
+    fig, ax = plt.subplots(figsize=(8, 8), subplot_kw={'projection': 'polar'})
 
     az_rad = np.radians(az_atual)
     ax.plot(az_rad, 1, 'ro')
-    ax.annotate(f"{az_atual:.2f}°", (az_rad, 1.1), ha='center', va='bottom', fontsize=10, color='red')
+    ax.text(az_rad, 1.15, f"{az_atual:.0f}°", color='red', fontsize=13, ha='center', va='bottom', fontweight='bold')
 
     ax.set_theta_offset(np.pi / 2)
     ax.set_theta_direction(-1)
@@ -100,10 +102,9 @@ def plotar_azimute_polar(az_atual):
     ax.set_xticks(np.radians([0, 90, 180, 270]))
     ax.set_xticklabels(['Norte', 'Leste', 'Sul', 'Oeste'])
 
-    ax.set_title("Bússola - Direção do Azimute", fontsize=14)
+    ax.set_title("Azimute Atual (Bússola)", fontsize=15)
     ax.grid(True)
     plt.close(fig)
-
     return fig
 
 # --- Streamlit App ---
@@ -140,8 +141,8 @@ if st.button("🚀 Iniciar Rastreamento em Tempo Real"):
             plotar_trajetoria(df, planeta, az, el, dt_obj)
 
         with compass_placeholder:
-            fig = plotar_azimute_polar(az)
-            st.pyplot(fig)
+            compass_fig = plotar_azimute_polar(az)
+            st.pyplot(compass_fig)
 
         with placeholder:
             st.markdown(f"""
