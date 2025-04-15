@@ -106,6 +106,13 @@ def plotar_azimute_polar(az_atual):
 
     return fig
 
+def calcular_visibilidade(planet_name, latitude, longitude, tempo):
+    # Verificando visibilidade com base na elevação
+    az, el, _, _ = calcular_posicao(planet_name, latitude, longitude, tempo)
+    visibilidade = "Visível" if el > 0 else "Invisível"
+    
+    return visibilidade
+
 # --- Streamlit App ---
 st.title("🔭 Planetas em Tempo Real")
 
@@ -135,6 +142,7 @@ if st.button("🚀 Iniciar Rastreamento em Tempo Real"):
         az, el, timestamp, dt_obj = calcular_posicao(planeta.lower(), latitude, longitude, tempo)
         az_dms = graus_para_dms(az)
         el_dms = graus_para_dms(el)
+        visibilidade = calcular_visibilidade(planeta.lower(), latitude, longitude, tempo)
 
         with chart_placeholder:
             plotar_trajetoria(df, planeta, az, el, dt_obj)
@@ -143,12 +151,14 @@ if st.button("🚀 Iniciar Rastreamento em Tempo Real"):
             fig = plotar_azimute_polar(az)
             st.pyplot(fig)
 
+
         with placeholder:
             st.markdown(f"""
             ### 🪐 {planeta.capitalize()} (Atual)
             **Timestamp (UTC):** `{timestamp}`  
             **Azimute:** {az:.2f}° ({az_dms})  
-            **Elevação:** {el:.2f}° ({el_dms})
+            **Elevação:** {el:.2f}° ({el_dms})  
+            **Visibilidade:** {visibilidade}
             """)
 
         time.sleep(0.1)
