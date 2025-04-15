@@ -128,5 +128,5 @@ if st.button("🚀 Iniciar Rastreamento + Ver Trajetória"):
         **Azimute:** {az:.2f}° ({az_dms})  
         **Elevação:** {el:.2f}° ({el_dms})
         """)
-        time.sleep(0.5)
+        time.sleep(0.1)
 
