@@ -1,5 +1,5 @@
 import streamlit as st
-from skyfield.api import load, Topos
+from skyfield.api import load, Topos, utc
 from datetime import datetime, timedelta, timezone
 import time
 import matplotlib.pyplot as plt
@@ -134,7 +134,6 @@ if st.button("🚀 Iniciar Rastreamento em Tempo Real"):
     placeholder = st.empty()
     chart_placeholder = st.empty()
     compass_placeholder = st.empty()
-    contador = 0
 
     df = gerar_trajetoria(planeta.lower(), latitude, longitude)
 
@@ -145,16 +144,13 @@ if st.button("🚀 Iniciar Rastreamento em Tempo Real"):
         el_dms = graus_para_dms(el)
         visibilidade = calcular_visibilidade(planeta.lower(), latitude, longitude, tempo)
 
-        if contador >= 60:
-            df = gerar_trajetoria(planeta.lower(), latitude, longitude)
-            contador = 0
-
         with chart_placeholder:
             plotar_trajetoria(df, planeta, az, el, dt_obj)
 
         with compass_placeholder:
             fig = plotar_azimute_polar(az)
             st.pyplot(fig)
+
 
         with placeholder:
             st.markdown(f"""
@@ -165,6 +161,5 @@ if st.button("🚀 Iniciar Rastreamento em Tempo Real"):
             **Visibilidade:** {visibilidade}
             """)
 
-        contador += 1
         time.sleep(0.1)
 
