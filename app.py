@@ -125,9 +125,9 @@ planeta = st.selectbox("🌌 Escolha um planeta:", [p.capitalize() for p in plan
 st.markdown("### 🌍 Sua localização:")
 col1, col2 = st.columns(2)
 with col1:
-    latitude = st.number_input("Latitude", value=-23.5505, format="%.6f")
+    latitude = st.number_input("Latitude", value=-22.669, format="%.6f")
 with col2:
-    longitude = st.number_input("Longitude", value=-46.6333, format="%.6f")
+    longitude = st.number_input("Longitude", value=-46.974, format="%.6f")
 
 if st.button("🚀 Iniciar Rastreamento em Tempo Real"):
     ts = load.timescale()
