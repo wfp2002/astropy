@@ -143,5 +143,5 @@ if st.button("🚀 Iniciar Rastreamento em Tempo Real"):
             **Elevação:** {el:.2f}° ({el_dms})
             """)
 
-        #time.sleep(0.5)  # Atualiza a cada 0.1 segundo (você pode ajustar o valor)
+        time.sleep(0.1)  # Atualiza a cada 0.1 segundo (você pode ajustar o valor)
 
